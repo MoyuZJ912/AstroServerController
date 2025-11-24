@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroServer Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+        
+        h1, h2 {
+            margin-bottom: 15px;
+        }
+        
+        .connection-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"], input[type="password"], input[type="number"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        button {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #555;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .control-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .command-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .command-group input, .command-group textarea {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .result {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .player-item, .save-item {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 4px solid #333;
+        }
+        
+        .player-name, .save-name {
+            font-weight: bold;
+        }
+        
+        /* 服务器状态样式 */
+        .server-status-container {
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .status-item {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .status-label {
+            width: 150px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .status-value {
+            color: #212529;
+        }
+        
+        .status-value.bold {
+            font-weight: 700;
+        }
+        
+        /* 服务器URL样式 */
+        .url-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        
+        /* 服务器URL隐藏和显示 */
+        .server-url {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        
+        .server-url .url-hidden {
+            color: #ccc;
+            font-style: italic;
+        }
+        
+        .server-url .url-full {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 100;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+        
+        .server-url:hover .url-full {
+            display: block;
+        }
+        
+        .server-url:hover .url-hidden {
+            display: none;
+        }
+        
+        /* 自动刷新设置样式 */
+        .refresh-settings {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .refresh-settings input {
+            width: 100px;
+        }
+        
+        @media (max-width: 768px) {
+            .command-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .command-group input, .command-group textarea {
+                min-width: auto;
+            }
+            
+            .refresh-settings {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .refresh-settings input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AstroServer RCON Controller</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="status" id="connectionStatus" data-connected="false">
+            未连接到服务器
+        </div>
+        
+        <div class="connection-form">
+            <h2>服务器连接</h2>
+            <div class="form-group">
+                <label for="ip">服务器IP</label>
+                <input type="text" id="ip" placeholder="例如: 127.0.0.1">
+            </div>
+            <div class="form-group">
+                <label for="port">RCON端口</label>
+                <input type="number" id="port" placeholder="例如: 8777">
+            </div>
+            <div class="form-group">
+                <label for="password">RCON密码</label>
+                <input type="password" id="password" placeholder="输入RCON密码">
+            </div>
+            <div class="command-group">
+                <button id="connectBtn">连接</button>
+                <button id="disconnectBtn" disabled>断开连接</button>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">
+                <h2>服务器状态</h2>
+            </div>
+            <div class="command-group">
+                <button id="getStatsBtn" disabled>获取服务器状态</button>
+                <button id="refreshNowBtn" disabled>立即刷新</button>
+            </div>
+            <div class="refresh-settings">
+                <label for="autoRefreshInterval">自动刷新间隔(秒):</label>
+                <input type="number" id="autoRefreshInterval" value="30" min="5" max="300">
+                <button id="saveRefreshInterval">保存</button>
+                <span id="refreshStatus">自动刷新: 已启用 (30秒)</span>
+            </div>
+            <div id="statsResult"></div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">
+                <h2>玩家管理</h2>
+            </div>
+            <div class="command-group">
+                <button id="getPlayersBtn" disabled>获取玩家列表</button>
+            </div>
+            <div class="result" id="playersResult"></div>
+            
+            <div class="command-group">
+                <input type="text" id="playerName" placeholder="玩家名称">
+                <button id="kickPlayerBtn" disabled>踢出玩家</button>
+                <button id="banPlayerBtn" disabled>封禁玩家</button>
+                <button id="whitelistPlayerBtn" disabled>白名单</button>
+                <button id="setAdminBtn" disabled>设为管理员</button>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">
+                <h2>存档管理</h2>
+            </div>
+            <div class="command-group">
+                <button id="getSavesBtn" disabled>获取存档列表</button>
+            </div>
+            <div class="result" id="savesResult"></div>
+            
+            <div class="command-group">
+                <input type="text" id="saveName" placeholder="存档名称">
+                <button id="saveGameBtn" disabled>保存游戏</button>
+                <button id="loadGameBtn" disabled>加载存档</button>
+                <button id="newGameBtn" disabled>创建新游戏</button>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">
+                <h2>广播消息</h2>
+            </div>
+            <div class="command-group">
+                <textarea id="broadcastMsg" placeholder="输入广播消息" rows="3"></textarea>
+                <button id="broadcastBtn" disabled>发送广播</button>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">
+                <h2>服务器控制</h2>
+            </div>
+            <div class="command-group">
+                <input type="number" id="shutdownDelay" placeholder="延迟时间(秒)" value="10">
+                <input type="text" id="shutdownMsg" placeholder="关闭消息">
+                <button id="shutdownBtn" disabled>关闭服务器</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 检查连接状态
+        function updateConnectionStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusEl = document.getElementById('connectionStatus');
+                    const connected = data.connected;
+                    
+                    statusEl.dataset.connected = connected;
+                    statusEl.textContent = connected ? '已连接到服务器' : '未连接到服务器';
+                    statusEl.className = connected ? 'status connected' : 'status disconnected';
+                    
+                    // 启用/禁用按钮
+                    const buttons = document.querySelectorAll('button:not(#connectBtn)');
+                    buttons.forEach(btn => {
+                        btn.disabled = !connected;
+                    });
+                    
+                    document.getElementById('connectBtn').disabled = connected;
+                    document.getElementById('disconnectBtn').disabled = !connected;
+                });
+        }
+        
+        // 连接到服务器
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            const ip = document.getElementById('ip').value;
+            const port = document.getElementById('port').value;
+            const password = document.getElementById('password').value;
+            
+            fetch('/connect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ip, port, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                updateConnectionStatus();
+                
+                // 连接成功后自动获取服务器状态
+                setTimeout(() => {
+                    const statusEl = document.getElementById('connectionStatus');
+                    if (statusEl.dataset.connected === 'true') {
+                        getServerStats();
+                        startAutoRefresh();
+                    }
+                }, 500);
+            });
+        });
+        
+        // 断开连接
+        document.getElementById('disconnectBtn').addEventListener('click', () => {
+            fetch('/disconnect')
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    updateConnectionStatus();
+                    stopAutoRefresh();
+                    const statsEl = document.getElementById('statsResult');
+                    statsEl.innerHTML = '<div>已断开连接</div>';
+                });
+        });
+        
+        // 发送命令的通用函数
+        function sendCommand(commandType, params = {}) {
+            return fetch('/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: commandType, params })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 将RCON返回值输出到控制台
+                console.log('RCON命令响应:', {
+                    commandType: commandType,
+                    params: params,
+                    response: data
+                });
+                return data;
+            });
+        }
+        
+        // 自动刷新相关变量
+        let autoRefreshInterval = 30;
+        let autoRefreshTimer = null;
+        
+        // 复制文本到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert('已复制到剪贴板！');
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    // 降级方案
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('已复制到剪贴板！');
+                });
+        }
+        
+        // 格式化服务器状态数据为中文显示（卡片布局）
+        function formatServerStats(data) {
+            if (!data) return '<div>暂无服务器状态数据</div>';
+            
+            // 转换游戏时长（秒转时分秒）
+            function formatTime(seconds) {
+                const days = Math.floor(seconds / 86400);
+                const h = Math.floor((seconds % 86400) / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = Math.floor(seconds % 60);
+                
+                let result = '';
+                if (days > 0) {
+                    result += `${days}天`;
+                }
+                if (h > 0 || days > 0) {
+                    result += `${h}小时`;
+                }
+                if (m > 0 || h > 0 || days > 0) {
+                    result += `${m}分钟`;
+                }
+                result += `${s}秒`;
+                
+                return result;
+            }
+            
+            // 服务器URL的隐藏和显示
+            const serverUrl = data.serverURL || '未知';
+            const urlHtml = `
+                <div class="url-section">
+                    <div class="status-label">服务器URL</div>
+                    <div class="server-url" onclick="copyToClipboard('${serverUrl}')">
+                        <span class="url-hidden">点击显示/复制服务器URL</span>
+                        <span class="url-full">${serverUrl}</span>
+                    </div>
+                </div>
+            `;
+            
+            return `
+                <div class="status-item">
+                    <span class="status-label">服务器GUID：</span>
+                    <span class="status-value">${data.serverName || '未知'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">服务端版本：</span>
+                    <span class="status-value">${data.build || '未知'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">服务器FPS：</span>
+                    <span class="status-value">${data.averageFPS ? data.averageFPS.toFixed(2) : '0.00'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">在线玩家：</span>
+                    <span class="status-value bold">${data.playersInGame || 0}/${data.maxInGamePlayers || 8}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">已知玩家总数：</span>
+                    <span class="status-value">${data.playersKnownToGame || 0}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">当前存档名称：</span>
+                    <span class="status-value">${data.saveGameName || '未知'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">服务器运行时长：</span>
+                    <span class="status-value">${formatTime(data.secondsInGame || 0)}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">创意模式：</span>
+                    <span class="status-value">${data.creativeMode ? '是' : '否'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">启用密码：</span>
+                    <span class="status-value">${data.hasServerPassword ? '是' : '否'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">无法获取成就：</span>
+                    <span class="status-value">${data.isAchievementProgressionDisabled ? '是' : '否'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">启用白名单：</span>
+                    <span class="status-value">${data.isEnforcingWhitelist ? '是' : '否'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">服务器所有者：</span>
+                    <span class="status-value">${data.ownerName || '未知'}</span>
+                </div>
+                ${urlHtml}
+            `;
+        }
+        
+        // 获取服务器状态
+        function getServerStats() {
+            sendCommand('get_server_stats')
+                .then(data => {
+                    const resultEl = document.getElementById('statsResult');
+                    if (data.status === 'success') {
+                        resultEl.innerHTML = formatServerStats(data.data);
+                    } else {
+                        resultEl.innerHTML = `<div style="color: red;">${data.message}</div>`;
+                    }
+                })
+                .catch(err => {
+                    const resultEl = document.getElementById('statsResult');
+                    resultEl.innerHTML = `<div style="color: red;">获取服务器状态失败: ${err.message}</div>`;
+                });
+        }
+        
+        // 立即刷新按钮
+        document.getElementById('getStatsBtn').addEventListener('click', getServerStats);
+        
+        // 立即刷新按钮（新增）
+        document.getElementById('refreshNowBtn').addEventListener('click', getServerStats);
+        
+        // 保存自动刷新间隔
+        document.getElementById('saveRefreshInterval').addEventListener('click', () => {
+            const newInterval = parseInt(document.getElementById('autoRefreshInterval').value);
+            if (newInterval >= 5 && newInterval <= 300) {
+                autoRefreshInterval = newInterval;
+                document.getElementById('refreshStatus').textContent = `自动刷新: 已启用 (${autoRefreshInterval}秒)`;
+                restartAutoRefresh();
+                alert('自动刷新间隔已保存！');
+            } else {
+                alert('请输入5-300之间的有效数字！');
+            }
+        });
+        
+        // 开始自动刷新
+        function startAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            
+            autoRefreshTimer = setInterval(() => {
+                const statusEl = document.getElementById('connectionStatus');
+                if (statusEl.dataset.connected === 'true') {
+                    getServerStats();
+                }
+            }, autoRefreshInterval * 1000);
+        }
+        
+        // 重启自动刷新
+        function restartAutoRefresh() {
+            startAutoRefresh();
+        }
+        
+        // 停止自动刷新
+        function stopAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+        }
+        
+        // 获取玩家列表
+        document.getElementById('getPlayersBtn').addEventListener('click', () => {
+            sendCommand('get_player_list')
+                .then(data => {
+                    const resultEl = document.getElementById('playersResult');
+                    if (data.status === 'success') {
+                        let html = '';
+                        if (data.data.playerInfo) {
+                            data.data.playerInfo.forEach((player, index) => {
+                                if (player.inGame) {
+                                    html += `
+                                        <div class="player-item">
+                                            <div class="player-name">${player.playerName}</div>
+                                            <div>GUID: ${player.playerGuid}</div>
+                                            <div>加入时间: ${new Date(player.joinTime * 1000).toLocaleString()}</div>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        }
+                        resultEl.innerHTML = html || '没有在线玩家';
+                    } else {
+                        resultEl.textContent = data.message;
+                    }
+                });
+        });
+        
+        // 获取存档列表
+        document.getElementById('getSavesBtn').addEventListener('click', () => {
+            sendCommand('get_save_games')
+                .then(data => {
+                    const resultEl = document.getElementById('savesResult');
+                    if (data.status === 'success') {
+                        let html = '';
+                        if (data.data.gameList) {
+                            data.data.gameList.forEach((save, index) => {
+                                const isActive = save.name === data.data.activeSaveName;
+                                html += `
+                                    <div class="save-item">
+                                        <div class="save-name">${save.name} ${isActive ? '(当前存档)' : ''}</div>
+                                        <div>日期: ${save.date}</div>
+                                    </div>
+                                `;
+                            });
+                        }
+                        resultEl.innerHTML = html || '没有存档';
+                    } else {
+                        resultEl.textContent = data.message;
+                    }
+                });
+        });
+        
+        // 保存游戏
+        document.getElementById('saveGameBtn').addEventListener('click', () => {
+            const saveName = document.getElementById('saveName').value;
+            sendCommand('save_game', { name: saveName })
+                .then(data => {
+                    alert(data.status === 'success' ? '游戏保存成功！' : data.message);
+                });
+        });
+        
+        // 加载存档
+        document.getElementById('loadGameBtn').addEventListener('click', () => {
+            const saveName = document.getElementById('saveName').value;
+            if (!saveName) {
+                alert('请输入存档名称');
+                return;
+            }
+            
+            if (confirm(`确定要加载存档 "${saveName}" 吗？当前未保存的进度将丢失！`)) {
+                sendCommand('load_save', { name: saveName })
+                    .then(data => {
+                        alert(data.status === 'success' ? '存档加载成功！' : data.message);
+                    });
+            }
+        });
+        
+        // 创建新游戏
+        document.getElementById('newGameBtn').addEventListener('click', () => {
+            if (confirm('确定要创建新游戏吗？当前进度将丢失！')) {
+                sendCommand('create_new_game')
+                    .then(data => {
+                        alert(data.status === 'success' ? '新游戏创建成功！' : data.message);
+                    });
+            }
+        });
+        
+        // 广播消息
+        document.getElementById('broadcastBtn').addEventListener('click', () => {
+            const message = document.getElementById('broadcastMsg').value;
+            if (!message) {
+                alert('请输入广播消息');
+                return;
+            }
+            
+            sendCommand('broadcast_message', { message })
+                .then(data => {
+                    alert(data.status === 'success' ? '广播发送成功！' : data.message);
+                });
+        });
+        
+        // 踢出玩家
+        document.getElementById('kickPlayerBtn').addEventListener('click', () => {
+            const playerGuid = prompt('请输入要踢出玩家的GUID:');
+            if (playerGuid) {
+                sendCommand('kick_player', { guid: playerGuid })
+                    .then(data => {
+                        alert(data.status === 'success' ? '玩家已被踢出！' : data.message);
+                    });
+            }
+        });
+        
+        // 封禁玩家
+        document.getElementById('banPlayerBtn').addEventListener('click', () => {
+            const playerName = document.getElementById('playerName').value;
+            if (!playerName) {
+                alert('请输入玩家名称');
+                return;
+            }
+            
+            sendCommand('ban_player', { name: playerName })
+                .then(data => {
+                    alert(data.status === 'success' ? '玩家已被封禁！' : data.message);
+                });
+        });
+        
+        // 白名单玩家
+        document.getElementById('whitelistPlayerBtn').addEventListener('click', () => {
+            const playerName = document.getElementById('playerName').value;
+            if (!playerName) {
+                alert('请输入玩家名称');
+                return;
+            }
+            
+            sendCommand('whitelist_player', { name: playerName })
+                .then(data => {
+                    alert(data.status === 'success' ? '玩家已加入白名单！' : data.message);
+                });
+        });
+        
+        // 设为管理员
+        document.getElementById('setAdminBtn').addEventListener('click', () => {
+            const playerName = document.getElementById('playerName').value;
+            if (!playerName) {
+                alert('请输入玩家名称');
+                return;
+            }
+            
+            sendCommand('set_admin', { name: playerName })
+                .then(data => {
+                    alert(data.status === 'success' ? '玩家已设为管理员！' : data.message);
+                });
+        });
+        
+        // 关闭服务器
+        document.getElementById('shutdownBtn').addEventListener('click', () => {
+            const delay = document.getElementById('shutdownDelay').value;
+            const message = document.getElementById('shutdownMsg').value;
+            
+            if (confirm('确定要关闭服务器吗？')) {
+                sendCommand('shutdown_server', { delay, message })
+                    .then(data => {
+                        alert(data.status === 'success' ? '服务器关闭命令已发送！' : data.message);
+                        // 关闭后自动断开连接
+                        setTimeout(updateConnectionStatus, parseInt(delay) * 1000 + 3000);
+                    });
+            }
+        });
+        
+        // 页面加载时检查连接状态
+        updateConnectionStatus();
+        
+        // 初始化时加载自动刷新间隔设置
+        const savedInterval = localStorage.getItem('autoRefreshInterval');
+        if (savedInterval) {
+            const interval = parseInt(savedInterval);
+            if (interval >= 5 && interval <= 300) {
+                autoRefreshInterval = interval;
+                document.getElementById('autoRefreshInterval').value = interval;
+                document.getElementById('refreshStatus').textContent = `自动刷新: 已启用 (${autoRefreshInterval}秒)`;
+            }
+        }
+        
+        // 保存刷新间隔到本地存储
+        document.getElementById('saveRefreshInterval').addEventListener('click', () => {
+            const newInterval = parseInt(document.getElementById('autoRefreshInterval').value);
+            if (newInterval >= 5 && newInterval <= 300) {
+                autoRefreshInterval = newInterval;
+                localStorage.setItem('autoRefreshInterval', newInterval);
+                document.getElementById('refreshStatus').textContent = `自动刷新: 已启用 (${autoRefreshInterval}秒)`;
+                restartAutoRefresh();
+                alert('自动刷新间隔已保存！');
+            } else {
+                alert('请输入5-300之间的有效数字！');
+            }
+        });
+        
+        // 页面加载完成后，如果已经连接则开始自动刷新
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const statusEl = document.getElementById('connectionStatus');
+                if (statusEl.dataset.connected === 'true') {
+                    getServerStats();
+                    startAutoRefresh();
+                }
+            }, 1000);
+        });
+        
+        // 页面关闭时清理定时器
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
