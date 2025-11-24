@@ -1,4 +1,5 @@
-# AstroServerControl 在线对《ASTRONEER》专用服务器进行管理
+# AstroServerControl 
+## ——在线对《ASTRONEER》专用服务器进行管理
 
 AstroServerControl 可以通过专用服务器的RCON端口连接并管理任意服务器（前提是拥有RCON密钥）。将其部署到任意服务器即可使用任意设备访问，在任意地方管理您的服务器。此外，AstroServerControl提供本地版，只需单独下载`ServerController.py`即可在本地操作远端服务器。
 
